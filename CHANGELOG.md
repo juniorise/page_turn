@@ -1,4 +1,8 @@
 # Changelog
+## 2.0.2
+
+* Add on drag end callback
+* Fix throw error on release mode
 
 ## 2.0.1
 
