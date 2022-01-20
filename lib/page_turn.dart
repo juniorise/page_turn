@@ -1,6 +1,16 @@
 import 'package:flutter/material.dart';
 import 'src/builders/index.dart';
 
+class PageTurnDragInfo {
+  final bool didPageUpdated;
+  final double dragValue;
+
+  PageTurnDragInfo({
+    required this.didPageUpdated,
+    required this.dragValue,
+  });
+}
+
 class PageTurn extends StatefulWidget {
   PageTurn({
     Key? key,
@@ -11,6 +21,7 @@ class PageTurn extends StatefulWidget {
     this.initialIndex = 0,
     this.lastPage,
     this.showDragCutoff = false,
+    this.onDragEnd,
   }) : super(key: key);
 
   final Color backgroundColor;
@@ -20,6 +31,7 @@ class PageTurn extends StatefulWidget {
   final Widget? lastPage;
   final bool showDragCutoff;
   final double cutoff;
+  final void Function(PageTurnDragInfo)? onDragEnd;
 
   @override
   PageTurnState createState() => PageTurnState();
@@ -101,22 +113,39 @@ class PageTurnState extends State<PageTurn> with TickerProviderStateMixin {
     }
   }
 
+  void beforeDragged({
+    required bool didPageUpdated,
+    required double dragValue,
+  }) {
+    if (widget.onDragEnd != null) {
+      widget.onDragEnd!(PageTurnDragInfo(
+        didPageUpdated: didPageUpdated,
+        dragValue: dragValue,
+      ));
+    }
+  }
+
   Future<void> _onDragFinish() async {
     if (_isForward != null) {
       if (_isForward!) {
         if (!_isLastPage && _controllers[pageNumber].value <= (widget.cutoff + 0.15)) {
+          beforeDragged(didPageUpdated: true, dragValue: _controllers[pageNumber].value);
           await nextPage();
         } else {
+          beforeDragged(didPageUpdated: false, dragValue: _controllers[pageNumber].value);
           await _controllers[pageNumber].forward();
         }
       } else if (pageNumber > 0) {
         print('Val:${_controllers[pageNumber - 1].value} -> ${widget.cutoff + 0.28}');
         if (!_isFirstPage && _controllers[pageNumber - 1].value >= widget.cutoff) {
+          beforeDragged(didPageUpdated: true, dragValue: _controllers[pageNumber - 1].value);
           await previousPage();
         } else {
           if (_isFirstPage) {
+            beforeDragged(didPageUpdated: false, dragValue: _controllers[pageNumber].value);
             await _controllers[pageNumber].forward();
           } else {
+            beforeDragged(didPageUpdated: false, dragValue: _controllers[pageNumber - 1].value);
             await _controllers[pageNumber - 1].reverse();
           }
         }
